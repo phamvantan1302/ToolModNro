@@ -1,0 +1,98 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|g:\\prjbuildmodbyemti_18-10-2024(2)\\assets\\scripts\\mod\\modfunc.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\mod\\modfunc.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|g:\\prjbuildmodbyemti_18-10-2024(2)\\assets\\scripts\\gamescr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gamescr.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|G:\\PrjbuildmodByEmti_18-10-2024(2)\\assets\\scripts\\message.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\message.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|G:\\PrjbuildmodByEmti_18-10-2024(2)\\assets\\scripts\\session_me.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39A3DCF1-ED10-4219-3CEA-4093E0189F97}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\session_me.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "GameScr.cs",
+              "DocumentMoniker": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\GameScr.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\GameScr.cs",
+              "ToolTip": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\GameScr.cs",
+              "RelativeToolTip": "Assets\\Scripts\\GameScr.cs",
+              "ViewState": "AgIAAHoZAAAAAAAAAAAvwIYZAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-17T23:20:24.862Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ModFunc.cs",
+              "DocumentMoniker": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\Mod\\ModFunc.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Mod\\ModFunc.cs",
+              "ToolTip": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\Mod\\ModFunc.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Mod\\ModFunc.cs",
+              "ViewState": "AgIAAPMBAAAAAAAAAAAowPMBAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T02:36:13.052Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Message.cs",
+              "DocumentMoniker": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\Message.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Message.cs",
+              "ToolTip": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\Message.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Message.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAiwDUAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T02:36:11.146Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Session_ME.cs",
+              "DocumentMoniker": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\Session_ME.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Session_ME.cs",
+              "ToolTip": "G:\\PrjbuildmodByEmti_18-10-2024(2)\\Assets\\Scripts\\Session_ME.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Session_ME.cs",
+              "ViewState": "AgIAAEIBAAAAAAAAAAAowE8BAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T02:35:20.96Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
