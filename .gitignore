@@ -1,0 +1,44 @@
+
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+
+# Rider / IDE
+.idea/
+
+# Unity cache
+sysinfo.txt
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Build files
+*.apk
+*.aab
+*.unitypackage
+
+# Unity logs
+[Ll]ogs/
+
+# Generated Visual Studio project files
+*.csproj
+*.slnx
+
+# Unity generated files
+*.pidb
+*.booproj
+*.svd
