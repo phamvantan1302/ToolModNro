@@ -373,6 +373,7 @@ public class Main : MonoBehaviour
 	private void OnApplicationQuit()
 	{
 		Debug.LogWarning("APP QUIT");
+		ModFunc.ResetBossList();
 		GameCanvas.bRun = false;
 		Session_ME.gI().close();
 		Session_ME2.gI().close();

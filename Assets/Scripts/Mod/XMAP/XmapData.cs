@@ -108,21 +108,21 @@ namespace Mod.XMAP
                 109,108,107,110,106,105
             };
             GroupMapData map6 = new(idMaps, "Cold");
-            //idMaps = new List<int>
-            //{
-            //    160,161,162,163
-            //};
-            //GroupMapData map7 = new(idMaps, "Hành Tinh\nThực Vật");
-            //idMaps = new List<int>
-            //{
-            //    139,140
-            //};
-            //GroupMapData map8 = new(idMaps, "Potaufeu");
-            //idMaps = new List<int>
-            //{
-            //    149,147,152,151,148
-            //};
-            //GroupMapData map9 = new(idMaps, "Khí Gas");
+            idMaps = new List<int>
+            {
+                160,161,162,163
+            };
+            GroupMapData map7 = new(idMaps, "Hành Tinh\nThực Vật");
+            idMaps = new List<int>
+            {
+                139,140
+            };
+            GroupMapData map8 = new(idMaps, "Potaufeu");
+            idMaps = new List<int>
+            {
+                149,147,152,151,148
+            };
+            GroupMapData map9 = new(idMaps, "Khí Gas");
             idMaps = new List<int>
             {
                 122,123,124

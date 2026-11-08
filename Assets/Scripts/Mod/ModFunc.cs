@@ -46,7 +46,7 @@ public class ModFunc : IActionListener
 
     public List<ItemAuto> listItemAuto = new();
 
-    public static bool notifBoss = false;
+    public static bool notifBoss = true;
 
     private bool lineToBoss;
 
@@ -55,6 +55,16 @@ public class ModFunc : IActionListener
     private long lastFocusBoss;
 
     public static MyVector bossNotif = new();
+
+    public static MyVector bossList = new();
+
+    public static void ResetBossList()
+    {
+        bossList.removeAllElements();
+        bossNotif.removeAllElements();
+        BossHistory.Clear();
+        Panel.bossSelect = -1;
+    }
 
     private long lastUpdateZones = 0;
 
@@ -148,9 +158,11 @@ public class ModFunc : IActionListener
 
     public static string strHighFps = "FPS Cao";
 
-    public static string strClickToChat = " [Ấn để chat]";
+    public static string strBossHistory = "Lịch Sử BOSS";
 
-    public static string strPlayerInfo = "Thông tin player";
+    public static string strPlayerInfo = "Thông Tin Player";
+
+    public static string strClickToChat = " [Ấn để chat]";
 
     public static string strPet2 = "Người iuu";
 
@@ -235,6 +247,48 @@ public class ModFunc : IActionListener
     public static ModFunc GI()
     {
         return Instance ?? new();
+    }
+
+    public void AddBossToList(ShowBoss boss)
+    {
+        if (boss == null)
+            return;
+
+        for (int i = 0; i < bossList.size(); i++)
+        {
+            ShowBoss existingBoss = (ShowBoss)bossList.elementAt(i);
+            if (existingBoss != null && string.Equals(existingBoss.nameBoss, boss.nameBoss, StringComparison.OrdinalIgnoreCase))
+            {
+                existingBoss.isDead = false;
+                existingBoss.time = boss.time;
+                existingBoss.appearedAt = boss.appearedAt;
+                existingBoss.mapName = boss.mapName;
+                existingBoss.mapID = boss.mapID;
+                existingBoss.zoneID = boss.zoneID;
+                existingBoss.killer = "Chưa có thông tin";
+                existingBoss.diedAt = null;
+                existingBoss.deathMessage = "";
+                return;
+            }
+        }
+
+        bossList.addElement(boss);
+    }
+
+        public void StartBossSearch(ShowBoss boss)
+        {
+            if (boss == null)
+                return;
+
+            GameScr.info1.addInfo("Đang dò boss " + boss.nameBoss + " tại map " + boss.mapName, 0);
+            // Di chuyển đến map boss
+            XmapController.StartRunToMapId(boss.mapID);
+        }
+
+    public void ShowBossHistory()
+    {
+        GameCanvas.panel.setTypeBoss();
+        GameCanvas.panel.show();
     }
 
     public static void DoEncodeIp()
@@ -486,15 +540,30 @@ public class ModFunc : IActionListener
 
     public int GetMapID(string mapName)
     {
-        int result = -1;
+        if (string.IsNullOrEmpty(mapName) || XmapController.mapNames == null)
+        {
+            return -1;
+        }
+
+        string cleanMap = mapName.Trim();
         for (int i = 0; i < XmapController.mapNames.Length; i++)
         {
-            if (XmapController.mapNames[i].Trim().ToLower().Equals(mapName.Trim().ToLower()))
+            if (XmapController.mapNames[i] != null &&
+                string.Equals(XmapController.mapNames[i].Trim(), cleanMap, StringComparison.OrdinalIgnoreCase))
             {
-                result = i;
+                return i;
             }
         }
-        return result;
+        for (int i = 0; i < XmapController.mapNames.Length; i++)
+        {
+            if (XmapController.mapNames[i] != null &&
+                (XmapController.mapNames[i].Trim().IndexOf(cleanMap, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 cleanMap.IndexOf(XmapController.mapNames[i].Trim(), StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private string CharGender(Char @char)
@@ -1137,6 +1206,7 @@ public class ModFunc : IActionListener
         {
             return;
         }
+
         if (GameCanvas.isPointerHoldIn(modKeyPosX + 2, modKeyPosY - 41, 32, 32))
         {
             if (GameCanvas.isPointerClick && GameCanvas.isPointerJustRelease)
@@ -1727,7 +1797,7 @@ public class ModFunc : IActionListener
                 break;
             case 32:
                 MyVector myVector1 = new();
-                myVector1.addElement(new Command(notifBoss ? "Thông báo BOSS [Bật]" : "Thông báo BOSS [Tắt]", 46));
+                myVector1.addElement(new Command("Thông báo BOSS", 46));
                 myVector1.addElement(new Command(lineToBoss ? "Kẻ đường tới BOSS [Bật]" : "Đường kẻ tới BOSS [Tắt]", 47));
                 myVector1.addElement(new Command(focusBoss ? "Focus BOSS [Bật]" : "Focus BOSS [Tắt]", 52));
                 GameCanvas.menu.startAt(myVector1, 4);
@@ -1803,8 +1873,8 @@ public class ModFunc : IActionListener
                 GameCanvas.menu.startAt(myVector, 4);
                 break;
             case 46:
-                notifBoss = !notifBoss;
-                GameScr.info1.addInfo("Thông báo BOSS " + (notifBoss ? "[Bật]" : "[Tắt]"), 0);
+                GameCanvas.panel.setTypeBoss();
+                GameCanvas.panel.show();
                 break;
             case 47:
                 lineToBoss = !lineToBoss;
@@ -2548,15 +2618,15 @@ public class ModFunc : IActionListener
     public static void LoadLogoImages()
     {
 
-        for (int i = 0; i < 60; i++)
-        {
-            logos[i] = GameCanvas.LoadImageFromRoot("/logo/" + i + ".png");
-        }
+       // for (int i = 0; i < 60; i++)
+       // {
+       //     logos[i] = GameCanvas.LoadImageFromRoot("/logo/" + i + ".png");
+       // }
 
-        //logo = GameCanvas.LoadImageFromRoot("/logo/logo.png");
-        imgBg = GameCanvas.LoadImageFromRoot("/logo/bg.png");
-        imgLogoBig = GameCanvas.LoadImageFromRoot("/logo/logo.png");
-       // imgLogoBig = GameCanvas.LoadImageFromRoot("/logo/logo2.png");
+       // //logo = GameCanvas.LoadImageFromRoot("/logo/logo.png");
+       // imgBg = GameCanvas.LoadImageFromRoot("/logo/bg.png");
+       // imgLogoBig = GameCanvas.LoadImageFromRoot("/logo/logo.png");
+       //// imgLogoBig = GameCanvas.LoadImageFromRoot("/logo/logo2.png");
     }
 
     public static void LoadTickImages()

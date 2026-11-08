@@ -4324,10 +4324,10 @@ public class GameScr : mScreen, IChatable
             int numX = 38;
             for (int i = 0; i < ModFunc.bossNotif.size(); i++)
             {
-                if (GameCanvas.isPointerHoldIn(GameCanvas.w - 20, numX + 3, 20, 10) && GameCanvas.isPointerClick && GameCanvas.isPointerJustRelease)
+                if (GameCanvas.isPointerHoldIn(GameCanvas.w - 180, numX, 180, 12) && GameCanvas.isPointerClick && GameCanvas.isPointerJustRelease)
                 {
                     ShowBoss boss = (ShowBoss) ModFunc.bossNotif.elementAt(i);
-                    ModFunc.GI().GoToBoss(boss.mapID);
+                    ModFunc.GI().AddBossToList(boss);
                     GameCanvas.clearAllPointerEvent();
                     return;
                 }
@@ -7122,12 +7122,91 @@ public class GameScr : mScreen, IChatable
             isFireWorks = true;
         }
         vChatVip.addElement(chatVip);
-        if (chatVip.Trim().ToLower().Contains("boss") && chatVip.Trim().ToLower().Contains("xuất hiện"))
+        BossHistory.RecordChat(chatVip);
+        string lowerChat = chatVip.Trim().ToLowerInvariant();
+        if (lowerChat.Contains("xuất hiện") && (lowerChat.Contains("boss") || chatVip.Trim().StartsWith("!")))
         {
-            ModFunc.bossNotif.addElement(new ShowBoss(chatVip));
+            ShowBoss newBoss = new ShowBoss(chatVip);
+            ModFunc.bossNotif.addElement(newBoss);
             if (ModFunc.bossNotif.size() > 5)
             {
                 ModFunc.bossNotif.removeElementAt(0);
+            }
+            ModFunc.GI().AddBossToList(newBoss);
+        }
+        else
+        {
+            BossDeathInfo deathInfo = BossHistory.ParseDeath(chatVip);
+            if (deathInfo.isDeath)
+            {
+                ShowBoss targetBoss = null;
+
+                // 1. Try to find undefeated boss matching parsed name
+                if (!string.IsNullOrEmpty(deathInfo.bossName))
+                {
+                    for (int i = ModFunc.bossList.size() - 1; i >= 0; i--)
+                    {
+                        ShowBoss b = (ShowBoss)ModFunc.bossList.elementAt(i);
+                        if (b != null && !b.isDead && !string.IsNullOrEmpty(b.nameBoss) &&
+                            (b.nameBoss.Equals(deathInfo.bossName, StringComparison.OrdinalIgnoreCase) ||
+                             b.nameBoss.IndexOf(deathInfo.bossName, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             deathInfo.bossName.IndexOf(b.nameBoss, StringComparison.OrdinalIgnoreCase) >= 0))
+                        {
+                            targetBoss = b;
+                            break;
+                        }
+                    }
+                }
+
+                // 2. Try to find undefeated boss whose name appears anywhere in chatVip
+                if (targetBoss == null)
+                {
+                    for (int i = ModFunc.bossList.size() - 1; i >= 0; i--)
+                    {
+                        ShowBoss b = (ShowBoss)ModFunc.bossList.elementAt(i);
+                        if (b != null && !b.isDead && !string.IsNullOrEmpty(b.nameBoss) &&
+                            chatVip.IndexOf(b.nameBoss, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            targetBoss = b;
+                            break;
+                        }
+                    }
+                }
+
+                // 3. Fall back to most recent undefeated boss with valid map
+                if (targetBoss == null)
+                {
+                    for (int i = ModFunc.bossList.size() - 1; i >= 0; i--)
+                    {
+                        ShowBoss b = (ShowBoss)ModFunc.bossList.elementAt(i);
+                        if (b != null && !b.isDead && b.mapID >= 0)
+                        {
+                            targetBoss = b;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetBoss != null)
+                {
+                    targetBoss.isDead = true;
+                    targetBoss.diedAt = DateTime.Now;
+                    targetBoss.killer = string.IsNullOrEmpty(deathInfo.killer) ? "Chưa có thông tin" : deathInfo.killer;
+                    targetBoss.deathMessage = chatVip.Trim();
+                }
+                else if (!string.IsNullOrEmpty(deathInfo.bossName))
+                {
+                    ShowBoss newDeadBoss = new ShowBoss();
+                    newDeadBoss.nameBoss = deathInfo.bossName;
+                    newDeadBoss.mapName = "Chưa có thông tin";
+                    newDeadBoss.mapID = -1;
+                    newDeadBoss.zoneID = -1;
+                    newDeadBoss.isDead = true;
+                    newDeadBoss.diedAt = DateTime.Now;
+                    newDeadBoss.killer = string.IsNullOrEmpty(deathInfo.killer) ? "Chưa có thông tin" : deathInfo.killer;
+                    newDeadBoss.deathMessage = chatVip.Trim();
+                    ModFunc.bossList.addElement(newDeadBoss);
+                }
             }
         }
     }

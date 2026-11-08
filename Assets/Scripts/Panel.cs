@@ -229,7 +229,7 @@ public class Panel : IActionListener, IChatable
 
     private static string[][] boxPet = mResources.petMainTab;
 
-    public string[][][] tabName = new string[29][][]
+    public string[][][] tabName = new string[31][][]
     {
         null,
         null,
@@ -259,7 +259,9 @@ public class Panel : IActionListener, IChatable
         new string[1][] { new string[1] { string.Empty } },
         new string[1][] { new string[1] { string.Empty } },
          new string[1][] { new string[1] { string.Empty } },
-         boxPet
+         boxPet,
+         new string[1][] { new string[1] { "Thông báo BOSS" } },
+         new string[1][] { new string[1] { "Chi tiết BOSS" } }
     };
 
     private static readonly sbyte BOX_BAG = 0;
@@ -485,6 +487,12 @@ public class Panel : IActionListener, IChatable
     public const int TYPE_GAMEINFOSUB = 24;
 
     public const int TYPE_SPEACIALSKILL = 25;
+
+    public const int TYPE_BOSS = 29;
+
+    public const int TYPE_BOSS_DETAIL = 30;
+
+    public static int bossSelect = -1;
 
     private int pointerDownTime;
 
@@ -2222,6 +2230,8 @@ public class Panel : IActionListener, IChatable
                 case 24:
                 case 26:
                 case 27:
+                case 29:
+                case 30:
                     updateKeyScrollView();
                     break;
                 case 21:
@@ -2957,6 +2967,19 @@ public class Panel : IActionListener, IChatable
         bool flag = false;
         if (GameCanvas.pxMouse > wScroll)
         {
+            return;
+        }
+        if (type == 29 || type == 30)
+        {
+            cmtoY -= a * 24;
+            if (cmtoY > cmyLim)
+            {
+                cmtoY = cmyLim;
+            }
+            if (cmtoY < 0)
+            {
+                cmtoY = 0;
+            }
             return;
         }
         if (indexMouse == -1)
@@ -4390,6 +4413,12 @@ public class Panel : IActionListener, IChatable
             case 27:
                 paintPlayerInfo(g);
                 break;
+            case 29:
+                paintBoss(g);
+                break;
+            case 30:
+                paintBossDetail(g);
+                break;
         }
         GameScr.resetTranslate(g);
         paintDetail(g);
@@ -5077,6 +5106,68 @@ public class Panel : IActionListener, IChatable
                 {
                     g.drawImage(imgNew, num + 10, num2 + 10, 3);
                 }
+            }
+        }
+        paintScrollArrow(g);
+    }
+
+    private void paintBoss(mGraphics g)
+    {
+        g.setClip(xScroll, yScroll, wScroll, hScroll);
+        g.translate(0, -cmy);
+        if (ModFunc.bossList.size() == 0)
+        {
+            mFont.tahoma_7_grey.drawString(g, "Chưa có thông báo Boss", xScroll + wScroll / 2, yScroll + 20, mFont.CENTER);
+        }
+        for (int i = 0; i < ModFunc.bossList.size(); i++)
+        {
+            ShowBoss boss = (ShowBoss)ModFunc.bossList.elementAt(i);
+            int num = xScroll;
+            int num2 = yScroll + i * ITEM_HEIGHT;
+            int num3 = wScroll - 1;
+            int h = ITEM_HEIGHT - 1;
+            if (num2 - cmy <= yScroll + hScroll && num2 - cmy >= yScroll - ITEM_HEIGHT)
+            {
+                g.setColor((i != selected) ? 15196114 : 16383818);
+                g.fillRect(num, num2, num3, h);
+                string text = boss.nameBoss;
+                mFont font = mFont.tahoma_7b_dark;
+                if (boss.isDead)
+                {
+                    font = mFont.tahoma_7_grey;
+                }
+                else if (boss.mapName != null && boss.mapName.Length > 0 && TileMap.mapName != null && TileMap.mapName.Trim().ToLower() == boss.mapName.Trim().ToLower())
+                {
+                    font = mFont.tahoma_7b_red;
+                }
+                font.drawString(g, text, xScroll + wScroll / 2, num2 + 6, mFont.CENTER);
+            }
+        }
+        paintScrollArrow(g);
+    }
+
+    private void paintBossDetail(mGraphics g)
+    {
+        g.setClip(xScroll, yScroll, wScroll, hScroll);
+        g.translate(0, -cmy);
+        for (int i = 0; i < contenInfo.Length; i++)
+        {
+            int num = xScroll;
+            int num2 = yScroll + i * 18;
+            int num3 = wScroll - 1;
+            int num4 = ITEM_HEIGHT - 1;
+            if (num2 - cmy <= yScroll + hScroll && num2 - cmy >= yScroll - ITEM_HEIGHT)
+            {
+                mFont font = mFont.tahoma_7b_dark;
+                if (contenInfo[i].StartsWith("Thời gian chết: Chưa có thông tin"))
+                {
+                    font = mFont.tahoma_7_grey;
+                }
+                else if (contenInfo[i].StartsWith("Thời gian chết:") || (contenInfo[i].StartsWith("Người tiêu diệt:") && !contenInfo[i].Contains("Chưa có thông tin")))
+                {
+                    font = mFont.tahoma_7b_red;
+                }
+                font.drawString(g, contenInfo[i], xScroll + 5, num2 + 6, mFont.LEFT);
             }
         }
         paintScrollArrow(g);
@@ -6652,6 +6743,13 @@ public class Panel : IActionListener, IChatable
 
     private void paintTab(mGraphics g)
     {
+        if (type == 29 || type == 30)
+        {
+            g.setColor(13524492);
+            g.fillRect(X + 1, 78, W - 2, 1);
+            mFont.tahoma_7b_dark.drawString(g, "Thông báo BOSS", xScroll + wScroll / 2, 59, mFont.CENTER);
+            return;
+        }
         if (type == 27)
         {
             g.setColor(13524492);
@@ -7211,6 +7309,8 @@ public class Panel : IActionListener, IChatable
             case 23:
             case 24:
             case 27:
+            case 29:
+            case 30:
                 SmallImage.drawSmallImage(g, Char.myCharz().avatarz(), X + 25, 50, 0, 33);
                 paintMyInfo(g);
                 break;
@@ -7869,6 +7969,14 @@ public class Panel : IActionListener, IChatable
             {
                 setTypeGameInfo();
             }
+            else if (type == 30)
+            {
+                setTypeBoss();
+            }
+            else if (type == 29)
+            {
+                isClose = true;
+            }
             else if (type == 23)
             {
                 setTypeMain();
@@ -7994,6 +8102,29 @@ public class Panel : IActionListener, IChatable
             tabIcon.update();
             return;
         }
+        if (type == 29)
+        {
+            currentListLength = ModFunc.bossList.size();
+            ITEM_HEIGHT = 24;
+            cmyLim = currentListLength * ITEM_HEIGHT - hScroll;
+            if (cmyLim < 0)
+            {
+                cmyLim = 0;
+            }
+        }
+        else if (type == 30)
+        {
+            if (contenInfo != null)
+            {
+                currentListLength = contenInfo.Length;
+                ITEM_HEIGHT = 18;
+                cmyLim = currentListLength * ITEM_HEIGHT - hScroll;
+                if (cmyLim < 0)
+                {
+                    cmyLim = 0;
+                }
+            }
+        }
         moveCamera();
         if (isTabInven() && isnewInventory)
         {
@@ -8017,6 +8148,12 @@ public class Panel : IActionListener, IChatable
                 {
                     case 23:
                         doFireGameInfo();
+                        break;
+                    case 29:
+                        doFireBoss();
+                        break;
+                    case 30:
+                        doFireBossDetail();
                         break;
                     case 21:
                         doFirePetMain();
@@ -8726,9 +8863,15 @@ public class Panel : IActionListener, IChatable
             Service.gI().sendDelAcc();
             return;
         }
+        if (selected == 3)
+        {
+            ModFunc.GI().ShowBossHistory();
+            return;
+        }
+        int actionIndex = selected > 3 ? selected - 1 : selected;
         if (!Char.myCharz().havePet && !Char.myCharz().havePet2)
         {
-            switch (selected)
+            switch (actionIndex)
             {
                 case 0:
                     setTypeGameInfo();
@@ -8780,7 +8923,7 @@ public class Panel : IActionListener, IChatable
         }
         if (Char.myCharz().havePet && Char.myCharz().havePet2)
         {
-            switch (selected)
+            switch (actionIndex)
             {
                 case 0:
                     setTypeGameInfo();
@@ -8836,7 +8979,7 @@ public class Panel : IActionListener, IChatable
             }
             return;
         }
-        switch (selected)
+        switch (actionIndex)
         {
             case 0:
                 setTypeGameInfo();
@@ -8980,6 +9123,114 @@ public class Panel : IActionListener, IChatable
         }
         type = 23;
         setType(0);
+    }
+
+    public void setTypeBoss()
+    {
+        type = 29;
+        setType(0);
+        setTabBoss();
+        currentTabIndex = 0;
+        cmx = cmtoX = 0;
+    }
+
+    public void setTabBoss()
+    {
+        currentListLength = ModFunc.bossList.size();
+        ITEM_HEIGHT = 24;
+        selected = GameCanvas.isTouch ? (-1) : 0;
+        cmyLim = currentListLength * ITEM_HEIGHT - hScroll;
+        if (cmyLim < 0)
+        {
+            cmyLim = 0;
+        }
+        cmy = cmtoY = cmyLast[currentTabIndex];
+        if (cmy < 0)
+        {
+            cmy = cmtoY = 0;
+        }
+        if (cmy > cmyLim)
+        {
+            cmy = cmtoY = cmyLim;
+        }
+    }
+
+    public void setTypeBossDetail(int index)
+    {
+        bossSelect = index;
+        if (bossSelect >= 0 && bossSelect < ModFunc.bossList.size())
+        {
+            ShowBoss boss = (ShowBoss)ModFunc.bossList.elementAt(bossSelect);
+            string timeAgo = "";
+            if (boss.time > 0)
+            {
+                long diffS = (mSystem.currentTimeMillis() - boss.time) / 1000;
+                if (diffS < 0)
+                {
+                    diffS = 0;
+                }
+                timeAgo = (diffS < 60) ? (diffS + "s trước") : (NinjaUtil.getTimeAgo(diffS) + " trước");
+            }
+            string appearTime = boss.appearedAt.ToString("HH'h':mm");
+            string lineAppear = "Xuất hiện: " + appearTime + (timeAgo.Length > 0 ? (" (" + timeAgo + ")") : "");
+            string lineMap = "Map: " + (string.IsNullOrEmpty(boss.mapName) || boss.mapName == "Chưa có thông tin" ? "Chưa có thông tin" : boss.mapName);
+            if (boss.zoneID >= 0 && !lineMap.Contains("Chưa có thông tin"))
+            {
+                lineMap += " (Khu " + boss.zoneID + ")";
+            }
+            string lineKiller = "Người tiêu diệt: " + (string.IsNullOrEmpty(boss.killer) ? "Chưa có thông tin" : boss.killer);
+            string lineDeath = "Thời gian chết: Chưa có thông tin";
+            if (boss.isDead && boss.diedAt.HasValue)
+            {
+                long deathDiffS = (long)(DateTime.Now - boss.diedAt.Value).TotalSeconds;
+                if (deathDiffS < 0)
+                {
+                    deathDiffS = 0;
+                }
+                string deathTimeAgo = (deathDiffS < 60) ? (deathDiffS + "s trước") : (NinjaUtil.getTimeAgo(deathDiffS) + " trước");
+                lineDeath = "Thời gian chết: " + boss.diedAt.Value.ToString("HH'h':mm") + " (" + deathTimeAgo + ")";
+            }
+            string content = lineAppear + "\n" + lineMap + "\n" + lineKiller + "\n" + lineDeath;
+            contenInfo = mFont.tahoma_7b_dark.splitFontArray(content, wScroll - 20);
+            currentListLength = contenInfo.Length;
+            ITEM_HEIGHT = 18;
+            selected = GameCanvas.isTouch ? (-1) : 0;
+            cmyLim = currentListLength * ITEM_HEIGHT - hScroll;
+            if (cmyLim < 0)
+            {
+                cmyLim = 0;
+            }
+            cmy = cmtoY = 0;
+            type = 30;
+            setType(0);
+        }
+    }
+
+    private void doFireBoss()
+    {
+        if (selected != -1)
+        {
+            setTypeBossDetail(selected);
+        }
+    }
+
+    private void doFireBossDetail()
+    {
+        if (bossSelect >= 0 && bossSelect < ModFunc.bossList.size())
+        {
+            ShowBoss boss = (ShowBoss)ModFunc.bossList.elementAt(bossSelect);
+            if (boss.mapID >= 0)
+            {
+                MyVector myVector = new MyVector();
+                myVector.addElement(new Command("Đến map (" + boss.mapName + ")", this, 888991, boss));
+                myVector.addElement(new Command("Quay lại", this, 888992, null));
+                GameCanvas.menu.startAt(myVector, X, (selected + 1) * ITEM_HEIGHT - cmy + yScroll);
+            }
+            else
+            {
+                setTypeBoss();
+            }
+        }
     }
 
     private void doFirePet()
@@ -10038,6 +10289,22 @@ public class Panel : IActionListener, IChatable
 
     public void perform(int idAction, object p)
     {
+        if (idAction == 888991)
+        {
+            ShowBoss b = (ShowBoss)p;
+            if (b != null && b.mapID >= 0)
+            {
+                hide();
+                XmapController.StartRunToMapId(b.mapID);
+                GameScr.info1.addInfo("Đang di chuyển đến " + b.mapName, 0);
+            }
+            return;
+        }
+        else if (idAction == 888992)
+        {
+            setTypeBoss();
+            return;
+        }
         if (idAction == 8010)
         {
             if (chatTField == null)

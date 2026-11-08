@@ -873,6 +873,7 @@ public class GameCanvas : IActionListener
     }
     public void onDisconnected()
     {
+        ModFunc.ResetBossList();
         if (Controller.isConnectionFail)
         {
             Controller.isConnectionFail = false;
@@ -1073,6 +1074,7 @@ public class GameCanvas : IActionListener
             Char.clearMyChar();
             GameScr.clearGameScr();
             GameScr.resetAllvector();
+            ModFunc.ResetBossList();
             InfoDlg.hide();
             GameScr.info1.hide();
             GameScr.info2.hide();

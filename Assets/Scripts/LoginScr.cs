@@ -374,6 +374,7 @@ public class LoginScr : mScreen, IActionListener
 
     public void doLogin()
     {
+        ModFunc.ResetBossList();
         string text = Rms.loadRMSString("acc");
         string text2 = Rms.loadRMSString("pass");
         if (text != null && !text.Equals(string.Empty))

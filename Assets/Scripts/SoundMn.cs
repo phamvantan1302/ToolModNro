@@ -151,11 +151,12 @@ public class SoundMn
         {
             if (Char.myCharz().havePet && Char.myCharz().havePet2)
             {
-                Panel.strTool = new string[13]
+                Panel.strTool = new string[14]
                 {
                     mResources.gameInfo,
                     mResources.quayso,
                     ModFunc.strPlayerInfo,
+                    ModFunc.strBossHistory,
                     mResources.radaCard,
                     mResources.pet,
                     ModFunc.strPet2,
@@ -170,11 +171,12 @@ public class SoundMn
             }
             else if (Char.myCharz().havePet || Char.myCharz().havePet2)
             {
-                Panel.strTool = new string[12]
+                Panel.strTool = new string[13]
                 {
                     mResources.gameInfo,
                     mResources.quayso,
                     ModFunc.strPlayerInfo,
+                    ModFunc.strBossHistory,
                     mResources.radaCard,
                     Char.myCharz().havePet ? mResources.pet : ModFunc.strPet2,
                     mResources.change_flag,
@@ -188,11 +190,12 @@ public class SoundMn
             }
             else
             {
-                Panel.strTool = new string[11]
+                Panel.strTool = new string[12]
             {
                 mResources.gameInfo,
                 mResources.quayso,
                 ModFunc.strPlayerInfo,
+                ModFunc.strBossHistory,
                 mResources.radaCard,
                 mResources.change_flag,
                 mResources.change_zone,
@@ -208,11 +211,12 @@ public class SoundMn
         {
             if (Char.myCharz().havePet && Char.myCharz().havePet2)
             {
-                Panel.strTool = new string[12]
+                Panel.strTool = new string[13]
                 {
                     mResources.gameInfo,
                     mResources.quayso,
                     ModFunc.strPlayerInfo,
+                    ModFunc.strBossHistory,
                     mResources.radaCard,
                     mResources.pet,
                     ModFunc.strPet2,
@@ -226,11 +230,12 @@ public class SoundMn
             }
             else if (Char.myCharz().havePet || Char.myCharz().havePet2)
             {
-                Panel.strTool = new string[11]
+                Panel.strTool = new string[12]
                 {
                     mResources.gameInfo,
                     mResources.quayso,
                     ModFunc.strPlayerInfo,
+                    ModFunc.strBossHistory,
                     mResources.radaCard,
                     Char.myCharz().havePet ? mResources.pet : ModFunc.strPet2,
                     mResources.change_flag,
@@ -243,11 +248,12 @@ public class SoundMn
             }
             else
             {
-                Panel.strTool = new string[10]
+                Panel.strTool = new string[11]
             {
                 mResources.gameInfo,
                 mResources.quayso,
                 ModFunc.strPlayerInfo,
+                ModFunc.strBossHistory,
                 mResources.radaCard,
                 mResources.change_flag,
                 mResources.change_zone,

@@ -37,6 +37,7 @@ public class ChooseCharScr : mScreen, IActionListener
 		LoginScr.isContinueToLogin = false;
 		ServerListScreen.waitToLogin = false;
 		GameScr.gI().initSelectChar();
+		ModFunc.ResetBossList();
 		base.switchToMe();
 	}
 
