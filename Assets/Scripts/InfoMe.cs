@@ -321,6 +321,7 @@ public class InfoMe
 	{
 		s = Res.changeString(s);
 		AutoXmap.Info(s);
+		ModFunc.OnServerAddInfo(s);
 		if (ModFunc.GI().isAutoVQMM)
 		{
 			if (s.ToLower().Contains("hành trang đã đầy"))

@@ -306,7 +306,8 @@ public class ModFunc : IActionListener
         myVector.addElement(new Command("Đệ tử", 16));
         myVector.addElement(new Command("BOSS", 32)); // Xong
         //myVector.addElement(new Command(Mod.doHoa, 15));
-        myVector.addElement(new Command("Up Yardrat", 31));
+        myVector.addElement(new Command("Up Yardrat", 30));
+        myVector.addElement(new Command(isAutoBoMong ? "Auto Bò Mộng [Bật]" : "Auto Bò Mộng [Tắt]", 31));
         myVector.addElement(new Command("Khác", 53));
         GameCanvas.menu.startAt(myVector, 4);
     }
@@ -805,6 +806,34 @@ public class ModFunc : IActionListener
 
     public bool Chat(string text)
     {
+        if (text == "abm" || text == "bomong")
+        {
+            ToggleAutoBoMong();
+            return true;
+        }
+        if (text == "abm hn" || text == "bomong hn")
+        {
+            autoBoMongTaskType = 0;
+            GameScr.info1.addInfo("Auto Bò Mộng: Nhiệm vụ Hàng ngày", 0);
+            return true;
+        }
+        if (text == "abm tl" || text == "bomong tl")
+        {
+            autoBoMongTaskType = 1;
+            GameScr.info1.addInfo("Auto Bò Mộng: Nhiệm vụ Tu luyện (Level " + autoBoMongLevel + ")", 0);
+            return true;
+        }
+        if (text.StartsWith("abm lv ") || text.StartsWith("bomong lv "))
+        {
+            string lvStr = text.Replace("abm lv ", "").Replace("bomong lv ", "").Trim();
+            if (int.TryParse(lvStr, out int lv) && lv >= 1 && lv <= 5)
+            {
+                autoBoMongTaskType = 1;
+                autoBoMongLevel = lv;
+                GameScr.info1.addInfo("Auto Bò Mộng: Tu luyện Level " + autoBoMongLevel, 0);
+                return true;
+            }
+        }
         if (text == "debug")
         {
             isDebugEnable = !isDebugEnable;
@@ -1795,6 +1824,34 @@ public class ModFunc : IActionListener
                 isPeanPet = !isPeanPet;
                 GameScr.info1.addInfo("Buff đậu cho đệ " + (isPeanPet ? "[Bật]" : "[Tắt]"), 0);
                 break;
+            case 31:
+                MyVector menuBoMong = new();
+                menuBoMong.addElement(new Command(isAutoBoMong ? "Auto Bò Mộng [Đang Bật - Bấm để Tắt]" : "Bắt đầu Auto Bò Mộng", 330));
+                menuBoMong.addElement(new Command("Loại NV: " + (autoBoMongTaskType == 0 ? "Nhiệm vụ hàng ngày" : "Nhiệm vụ tu luyện"), 331));
+                if (autoBoMongTaskType == 1)
+                {
+                    menuBoMong.addElement(new Command("Cấp độ tu luyện: Level " + autoBoMongLevel, 333));
+                }
+                menuBoMong.addElement(new Command("Đến Bò Mộng (Rừng Karin)", 332));
+                GameCanvas.menu.startAt(menuBoMong, 4);
+                break;
+            case 330:
+                ToggleAutoBoMong();
+                break;
+            case 331:
+                autoBoMongTaskType = (autoBoMongTaskType == 0) ? 1 : 0;
+                GameScr.info1.addInfo("Đã đổi loại NV Bò Mộng: " + (autoBoMongTaskType == 0 ? "Hàng ngày" : "Tu luyện (Level " + autoBoMongLevel + ")"), 0);
+                perform(31, null);
+                break;
+            case 333:
+                autoBoMongLevel = (autoBoMongLevel % 5) + 1;
+                GameScr.info1.addInfo("Đã chọn Tu luyện: Level " + autoBoMongLevel, 0);
+                perform(31, null);
+                break;
+            case 332:
+                XmapController.StartRunToMapId(47);
+                GameScr.info1.addInfo("Đang di chuyển đến Bò Mộng (Rừng Karin)...", 0);
+                break;
             case 32:
                 MyVector myVector1 = new();
                 myVector1.addElement(new Command("Thông báo BOSS", 46));
@@ -2683,4 +2740,791 @@ public class ModFunc : IActionListener
             }
         }
     }
+
+    #region Auto Bo Mong
+    public static bool isAutoBoMong = false;
+    public static int autoBoMongTaskType = 0; // 0: Nhiệm vụ hàng ngày, 1: Nhiệm vụ tu luyện
+    public static int autoBoMongLevel = 1;    // Level 1 -> 5 (Dành cho Nhiệm vụ tu luyện)
+    private static Thread threadAutoBoMong = null;
+
+    // Parsed task state directly from Bò Mộng dialog / notifications
+    public static bool boMongHasTask = false;
+    public static bool boMongIsDone = false;
+    public static string boMongMobName = "";
+    public static int boMongTargetMapId = -1;
+    public static int boMongCount = 0;
+    public static int boMongMaxCount = 0;
+    public static int boMongPercent = 0;
+
+    public static void ResetBoMongTask()
+    {
+        boMongHasTask = false;
+        boMongIsDone = false;
+        boMongMobName = "";
+        boMongTargetMapId = -1;
+        boMongCount = 0;
+        boMongMaxCount = 0;
+        boMongPercent = 0;
+        TaskOrder curTask = GetCurrentBoMongTask();
+        if (curTask != null)
+        {
+            Char.myCharz().taskOrders.removeElement(curTask);
+        }
+    }
+
+    public static bool HasBoMongTask()
+    {
+        if (boMongHasTask && !string.IsNullOrEmpty(boMongMobName)) return true;
+        return GetCurrentBoMongTask() != null;
+    }
+
+    public static bool IsBoMongTaskDone()
+    {
+        if (boMongIsDone || boMongPercent >= 100 || (boMongMaxCount > 0 && boMongCount >= boMongMaxCount))
+        {
+            return true;
+        }
+        TaskOrder curTask = GetCurrentBoMongTask();
+        if (curTask != null && curTask.count >= curTask.maxCount)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public static void OnServerAddInfo(string s)
+    {
+        if (!isAutoBoMong || string.IsNullOrEmpty(s)) return;
+        string sLower = s.ToLower();
+
+        if (sLower.Contains("100%") || sLower.Contains("hoàn thành nhiệm vụ") || sLower.Contains("đã hoàn thành: 100%"))
+        {
+            boMongPercent = 100;
+            boMongIsDone = true;
+            GameScr.info1.addInfo("Nhiệm vụ Bò Mộng đạt 100%!", 0);
+            return;
+        }
+
+        if (boMongHasTask)
+        {
+            int pOpen = s.IndexOf('(');
+            int pClose = s.IndexOf('%');
+            if (pOpen >= 0 && pClose > pOpen)
+            {
+                string pStr = s.Substring(pOpen + 1, pClose - pOpen - 1).Trim();
+                if (int.TryParse(pStr, out int pct))
+                {
+                    boMongPercent = pct;
+                    if (boMongPercent >= 100)
+                    {
+                        boMongIsDone = true;
+                    }
+                }
+            }
+
+            if (s.Contains("/"))
+            {
+                int slash = s.IndexOf('/');
+                string before = s.Substring(0, slash);
+                string after = s.Substring(slash + 1);
+                string[] bParts = before.Split(' ');
+                string[] aParts = after.Split(' ', '(', '%', ')');
+                if (int.TryParse(bParts[bParts.Length - 1].Trim(), out int curC) && int.TryParse(aParts[0].Trim(), out int maxC))
+                {
+                    boMongCount = curC;
+                    boMongMaxCount = maxC;
+                    if (boMongMaxCount > 0)
+                    {
+                        boMongPercent = (boMongCount * 100) / boMongMaxCount;
+                    }
+                    if (boMongCount >= boMongMaxCount || boMongPercent >= 100)
+                    {
+                        boMongIsDone = true;
+                    }
+                }
+            }
+        }
+    }
+
+    public static void ParseBoMongChat(string chat)
+    {
+        if (string.IsNullOrEmpty(chat)) return;
+
+        try
+        {
+            if (chat.Contains("Nhiệm vụ hiện tại:") || chat.Contains("hoàn thành:"))
+            {
+                boMongHasTask = true;
+
+                int idxTieuDiet = chat.IndexOf("Tiêu diệt ", StringComparison.OrdinalIgnoreCase);
+                if (idxTieuDiet >= 0)
+                {
+                    string after = chat.Substring(idxTieuDiet + 10).Trim();
+                    string targetLine = after.Split('\n')[0].Trim();
+                    
+                    int parenIdx = targetLine.IndexOf('(');
+                    if (parenIdx >= 0)
+                    {
+                        targetLine = targetLine.Substring(0, parenIdx).Trim();
+                    }
+
+                    string[] parts = targetLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2 && int.TryParse(parts[0], out int maxC))
+                    {
+                        boMongMaxCount = maxC;
+                        boMongMobName = string.Join(" ", parts, 1, parts.Length - 1).Trim();
+                    }
+                    else if (parts.Length >= 1)
+                    {
+                        boMongMobName = targetLine;
+                    }
+                }
+
+                int idxHoanThanh = chat.IndexOf("hoàn thành:", StringComparison.OrdinalIgnoreCase);
+                if (idxHoanThanh >= 0)
+                {
+                    string progLine = chat.Substring(idxHoanThanh + 11).Trim().Split('\n')[0].Trim();
+                    if (progLine.Contains("/"))
+                    {
+                        string[] numParts = progLine.Split('/')[0].Trim().Split(' ');
+                        string curStr = numParts[numParts.Length - 1].Trim();
+                        if (int.TryParse(curStr, out int curC))
+                        {
+                            boMongCount = curC;
+                        }
+
+                        string afterSlash = progLine.Substring(progLine.IndexOf('/') + 1).Trim();
+                        string maxStr = afterSlash.Split(' ')[0].Trim();
+                        if (int.TryParse(maxStr, out int maxC2))
+                        {
+                            boMongMaxCount = maxC2;
+                        }
+                    }
+
+                    int pOpen = progLine.IndexOf('(');
+                    int pClose = progLine.IndexOf('%');
+                    if (pOpen >= 0 && pClose > pOpen)
+                    {
+                        string pStr = progLine.Substring(pOpen + 1, pClose - pOpen - 1).Trim();
+                        if (int.TryParse(pStr, out int pct))
+                        {
+                            boMongPercent = pct;
+                        }
+                    }
+                }
+
+                if (boMongPercent >= 100 || (boMongMaxCount > 0 && boMongCount >= boMongMaxCount))
+                {
+                    boMongIsDone = true;
+                }
+                else
+                {
+                    boMongIsDone = false;
+                }
+
+                boMongTargetMapId = FindMapForMob(boMongMobName);
+
+                GameScr.info1.addInfo("Bò Mộng: " + boMongMobName + " (" + boMongCount + "/" + boMongMaxCount + " - " + boMongPercent + "%)", 0);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+    }
+
+    public static void ToggleAutoBoMong()
+    {
+        isAutoBoMong = !isAutoBoMong;
+        if (isAutoBoMong)
+        {
+            GameScr.info1.addInfo("Auto Bò Mộng: BẬT", 0);
+            if (threadAutoBoMong == null || !threadAutoBoMong.IsAlive)
+            {
+                threadAutoBoMong = new Thread(AutoBoMongLoop);
+                threadAutoBoMong.IsBackground = true;
+                threadAutoBoMong.Start();
+            }
+        }
+        else
+        {
+            GameScr.info1.addInfo("Auto Bò Mộng: TẮT", 0);
+            PickMob.tanSat = false;
+            GI().autoAttack = false;
+        }
+    }
+
+    public static void HandleNpcMenu(int npcId, string[] menu, string chat = null)
+    {
+        if (npcId != 17 || !isAutoBoMong || menu == null || menu.Length == 0) return;
+
+        if (!string.IsNullOrEmpty(chat))
+        {
+            ParseBoMongChat(chat);
+        }
+
+        // If we already have an active quest and it is NOT done, close menu so AutoBoMongLoop can teleport to quest map!
+        if (boMongHasTask && !boMongIsDone && !IsBoMongTaskDone())
+        {
+            if (GameCanvas.menu != null && GameCanvas.menu.showMenu)
+            {
+                GameCanvas.menu.doCloseMenu();
+            }
+            return;
+        }
+
+        bool isCompleted = boMongIsDone || IsBoMongTaskDone();
+
+        // 1. Nhận thưởng / Báo cáo / Hoàn thành nhiệm vụ
+        for (sbyte i = 0; i < menu.Length; i++)
+        {
+            if (string.IsNullOrEmpty(menu[i])) continue;
+            string opt = menu[i].Trim().ToLower();
+            if (opt.Contains("nhận thưởng") || opt.Contains("báo cáo") || opt.Contains("trả nhiệm vụ") || opt.Contains("hoàn thành"))
+            {
+                Service.gI().confirmMenu(17, i);
+                GameScr.info1.addInfo("Đã nhận thưởng nhiệm vụ Bò Mộng!", 0);
+                ResetBoMongTask();
+                if (GameCanvas.menu != null && GameCanvas.menu.showMenu)
+                {
+                    GameCanvas.menu.doCloseMenu();
+                }
+                return;
+            }
+        }
+
+        // 2. Chọn cấp độ rèn luyện (Level 1, Level 2, Level 3, Level 4, Level 5)
+        bool hasLevel = false;
+        for (int i = 0; i < menu.Length; i++)
+        {
+            if (!string.IsNullOrEmpty(menu[i]) && menu[i].ToLower().Contains("level"))
+            {
+                hasLevel = true;
+                break;
+            }
+        }
+
+        if (hasLevel)
+        {
+            string targetLevel = "level " + autoBoMongLevel;
+            sbyte targetIndex = -1;
+            for (sbyte i = 0; i < menu.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(menu[i]) && menu[i].ToLower().Trim().Contains(targetLevel))
+                {
+                    targetIndex = i;
+                    break;
+                }
+            }
+
+            if (targetIndex == -1)
+            {
+                int idx = autoBoMongLevel - 1;
+                if (idx >= 0 && idx < menu.Length && !menu[idx].ToLower().Contains("từ chối"))
+                {
+                    targetIndex = (sbyte)idx;
+                }
+            }
+
+            if (targetIndex != -1)
+            {
+                Service.gI().confirmMenu(17, targetIndex);
+                GameScr.info1.addInfo("Đã chọn Tu luyện: Level " + autoBoMongLevel, 0);
+                return;
+            }
+        }
+
+        // 3. Xác nhận / Đồng ý nhận nhiệm vụ
+        for (sbyte i = 0; i < menu.Length; i++)
+        {
+            if (string.IsNullOrEmpty(menu[i])) continue;
+            string opt = menu[i].Trim().ToLower();
+            if (opt.Contains("nhận nhiệm vụ") || opt.Contains("đồng ý") || opt.Contains("nhận lời") || opt == "ok" || opt == "có")
+            {
+                Service.gI().confirmMenu(17, i);
+                GameScr.info1.addInfo("Đã nhận nhiệm vụ Bò Mộng!", 0);
+                if (GameCanvas.menu != null && GameCanvas.menu.showMenu)
+                {
+                    GameCanvas.menu.doCloseMenu();
+                }
+                return;
+            }
+        }
+
+        // 4. Menu chính Bò Mộng: ["Nhiệm vụ hàng ngày", "Nhiệm vụ tu luyện", "Từ chối"]
+        for (sbyte i = 0; i < menu.Length; i++)
+        {
+            if (string.IsNullOrEmpty(menu[i])) continue;
+            string opt = menu[i].Trim().ToLower();
+
+            int typeToSelect = autoBoMongTaskType;
+            if (isCompleted)
+            {
+                TaskOrder curTask = GetCurrentBoMongTask();
+                if (curTask != null)
+                {
+                    typeToSelect = (curTask.taskId == 0) ? 0 : 1;
+                }
+            }
+
+            if (typeToSelect == 0 && opt.Contains("hàng ngày"))
+            {
+                Service.gI().confirmMenu(17, i);
+                return;
+            }
+            if (typeToSelect == 1 && opt.Contains("tu luyện"))
+            {
+                Service.gI().confirmMenu(17, i);
+                return;
+            }
+        }
+    }
+
+    public static TaskOrder GetCurrentBoMongTask()
+    {
+        if (Char.myCharz().taskOrders == null || Char.myCharz().taskOrders.size() == 0)
+        {
+            return null;
+        }
+        for (int i = 0; i < Char.myCharz().taskOrders.size(); i++)
+        {
+            TaskOrder task = (TaskOrder)Char.myCharz().taskOrders.elementAt(i);
+            if (task == null) continue;
+            if (autoBoMongTaskType == 0 && task.taskId == 0)
+            {
+                return task;
+            }
+            if (autoBoMongTaskType == 1 && task.taskId != 0)
+            {
+                return task;
+            }
+        }
+        return null;
+    }
+
+    public static int GetMobTemplateIdByName(string mobName)
+    {
+        if (string.IsNullOrEmpty(mobName) || Mob.arrMobTemplate == null) return -1;
+        string clean = mobName.Trim().ToLower();
+        for (int i = 0; i < Mob.arrMobTemplate.Length; i++)
+        {
+            if (Mob.arrMobTemplate[i] != null && !string.IsNullOrEmpty(Mob.arrMobTemplate[i].name))
+            {
+                string tName = Mob.arrMobTemplate[i].name.Trim().ToLower();
+                if (tName == clean || tName.Contains(clean) || clean.Contains(tName))
+                {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    public static int FindMapForMob(string mobName)
+    {
+        if (string.IsNullOrEmpty(mobName)) return -1;
+        string nameLower = mobName.ToLower().Trim();
+
+        // 1. If current map already has this mob, stay here!
+        for (int i = 0; i < GameScr.vMob.size(); i++)
+        {
+            Mob m = (Mob)GameScr.vMob.elementAt(i);
+            if (m != null && m.getTemplate() != null)
+            {
+                if (m.getTemplate().name.ToLower().Contains(nameLower) || nameLower.Contains(m.getTemplate().name.ToLower()))
+                {
+                    return TileMap.mapID;
+                }
+            }
+        }
+
+        // 2. Check if any map name contains the mob name
+        if (XmapController.mapNames != null)
+        {
+            for (int i = 0; i < XmapController.mapNames.Length; i++)
+            {
+                string mName = XmapController.mapNames[i];
+                if (!string.IsNullOrEmpty(mName) && mName.ToLower().Contains(nameLower))
+                {
+                    return i;
+                }
+            }
+        }
+
+        // 3. Known special mob names in NRO
+        if (nameLower.Contains("nappa")) return 68;
+        if (nameLower.Contains("appule")) return 70;
+        if (nameLower.Contains("raspberry")) return 71;
+        if (nameLower.Contains("kuku")) return 68;
+        if (nameLower.Contains("mập đầu đinh")) return 64;
+        if (nameLower.Contains("rambo")) return 66;
+        if (nameLower.Contains("thằn lằn bay") || nameLower.Contains("than lan bay")) return 4;
+        if (nameLower.Contains("phi long")) return 3;
+        if (nameLower.Contains("quỷ bay") || nameLower.Contains("quy bay")) return 11;
+        if (nameLower.Contains("heo rừng") || nameLower.Contains("heo rung")) return 18;
+        if (nameLower.Contains("mộc nhân") || nameLower.Contains("moc nhan")) return (Char.myCharz().cgender == 0) ? 0 : ((Char.myCharz().cgender == 1) ? 7 : 14);
+        if (nameLower.Contains("khủng long") || nameLower.Contains("khung long")) return 1;
+        if (nameLower.Contains("quỷ đất") || nameLower.Contains("quy dat")) return 8;
+        if (nameLower.Contains("quái mẹ") || nameLower.Contains("quai me")) return 15;
+        if (nameLower.Contains("thằn lằn") || nameLower.Contains("than lan")) return 2;
+        if (nameLower.Contains("chó rừng") || nameLower.Contains("cho rung")) return 16;
+        if (nameLower.Contains("ốc sên") || nameLower.Contains("oc sen")) return 9;
+        if (nameLower.Contains("heo mọi") || nameLower.Contains("heo moi")) return 17;
+        if (nameLower.Contains("chuồn chuồn") || nameLower.Contains("chuon chuon")) return 11;
+        if (nameLower.Contains("bạch tuộc") || nameLower.Contains("bach tuoc")) return 31;
+        if (nameLower.Contains("tôm") || nameLower.Contains("tom")) return 33;
+        if (nameLower.Contains("xên") || nameLower.Contains("xen")) return 100;
+        if (nameLower.Contains("cooler")) return 108;
+        if (nameLower.Contains("burter") || nameLower.Contains("raiti") || nameLower.Contains("ginyu")) return 79;
+        if (nameLower.Contains("tai đỏ") || nameLower.Contains("tai do")) return 92;
+        if (nameLower.Contains("búp bê") || nameLower.Contains("bup be")) return 93;
+        if (nameLower.Contains("đầu búa") || nameLower.Contains("dau bua")) return 94;
+
+        // 4. Try matching mob template ID and using GetMapByMobId
+        int tmplId = GetMobTemplateIdByName(mobName);
+        if (tmplId >= 0)
+        {
+            int mapId = GetMapByMobId(tmplId);
+            if (mapId >= 0) return mapId;
+        }
+
+        return -1;
+    }
+
+    public static int GetTaskMapId(TaskOrder task)
+    {
+        if (task == null) return -1;
+
+        for (int i = 0; i < GameScr.vMob.size(); i++)
+        {
+            Mob mob = (Mob)GameScr.vMob.elementAt(i);
+            if (mob != null && mob.templateId == task.killId)
+            {
+                return TileMap.mapID;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(task.description) && XmapController.mapNames != null)
+        {
+            int bestMapId = -1;
+            int bestLen = 0;
+            for (int i = 0; i < XmapController.mapNames.Length; i++)
+            {
+                string mName = XmapController.mapNames[i];
+                if (!string.IsNullOrEmpty(mName) && mName.Length > 2 &&
+                    task.description.IndexOf(mName, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (mName.Length > bestLen)
+                    {
+                        bestLen = mName.Length;
+                        bestMapId = i;
+                    }
+                }
+            }
+            if (bestMapId != -1) return bestMapId;
+        }
+
+        if (task.mapId > 0 && XmapController.mapNames != null && task.mapId < XmapController.mapNames.Length)
+        {
+            return task.mapId;
+        }
+
+        int mobMap = GetMapByMobId(task.killId);
+        if (mobMap != -1) return mobMap;
+
+        if (task.mapId == 0) return 0;
+
+        return -1;
+    }
+
+    public static int GetMapByMobId(int mobTemplateId)
+    {
+        switch (mobTemplateId)
+        {
+            case 0: return 1;
+            case 1: return 1;
+            case 2: return 8;
+            case 3: return 15;
+            case 4: return 2;
+            case 5: return 9;
+            case 6: return 16;
+            case 7: return 3;
+            case 8: return 11;
+            case 9: return 17;
+            case 10: return 4;
+            case 11: return 12;
+            case 12: return 18;
+            case 13: return 27;
+            case 14: return 28;
+            case 15: return 29;
+            case 16: return 30;
+            case 17: return 6;
+            case 18: return 7;
+            case 19: return 2;
+            case 20: return 9;
+            case 21: return 16;
+            case 22: return 4;
+            case 23: return 12;
+            case 24: return 18;
+            case 25: return 3;
+            case 26: return 11;
+            case 27: return 17;
+            case 28: return 2;
+            case 29: return 9;
+            case 30: return 16;
+            default: return 1;
+        }
+    }
+
+    public static string GetMapNameById(int mapId)
+    {
+        if (XmapController.mapNames != null && mapId >= 0 && mapId < XmapController.mapNames.Length && !string.IsNullOrEmpty(XmapController.mapNames[mapId]))
+        {
+            return XmapController.mapNames[mapId];
+        }
+        return "Map " + mapId;
+    }
+
+    private static void GoToBoMongAndInteract(bool isReport)
+    {
+        const int MAP_BO_MONG = 47;
+        const int NPC_BO_MONG = 17;
+
+        if (TileMap.mapID != MAP_BO_MONG)
+        {
+            GameScr.info1.addInfo(isReport ? "Đang về Rừng Karin báo cáo..." : "Đang đến Rừng Karin nhận NV...", 0);
+            XmapController.StartRunToMapId(MAP_BO_MONG);
+            while (TileMap.mapID != MAP_BO_MONG && isAutoBoMong)
+            {
+                if (Char.myCharz().cHP <= 0 || Char.myCharz().statusMe == 14)
+                {
+                    Service.gI().returnTownFromDead();
+                    Thread.Sleep(3000);
+                    XmapController.StartRunToMapId(MAP_BO_MONG);
+                }
+                Thread.Sleep(500);
+            }
+            if (!isAutoBoMong) return;
+            Thread.Sleep(1000);
+        }
+
+        if (TileMap.mapID != MAP_BO_MONG) return;
+
+        GI().GotoNpc(NPC_BO_MONG);
+        if (Math.abs(Char.myCharz().cx - 614) > 50)
+        {
+            GI().MoveTo(614, 336);
+        }
+        Thread.Sleep(600);
+
+        for (int i = 0; i < GameScr.vNpc.size(); i++)
+        {
+            Npc npc = (Npc)GameScr.vNpc.elementAt(i);
+            if (npc != null && npc.template.npcTemplateId == NPC_BO_MONG)
+            {
+                Char.myCharz().npcFocus = npc;
+                break;
+            }
+        }
+
+        Service.gI().openMenu(NPC_BO_MONG);
+
+        for (int wait = 0; wait < 15 && isAutoBoMong; wait++)
+        {
+            Thread.Sleep(200);
+            if (isReport)
+            {
+                if (!IsBoMongTaskDone()) break;
+            }
+            else
+            {
+                if (HasBoMongTask()) break;
+            }
+        }
+
+        if (GameCanvas.menu != null && GameCanvas.menu.showMenu)
+        {
+            GameCanvas.menu.doCloseMenu();
+        }
+    }
+
+    private static void AutoBoMongLoop()
+    {
+        while (isAutoBoMong)
+        {
+            try
+            {
+                if (Char.myCharz().cHP > 0 && Char.myCharz().cHP < Char.myCharz().cHPFull * 30 / 100)
+                {
+                    GameScr.gI().doUseHP();
+                }
+
+                if (Char.myCharz().cHP <= 0 || Char.myCharz().statusMe == 14)
+                {
+                    GameScr.info1.addInfo("Nhân vật bị hạ, đang hồi sinh...", 0);
+                    Service.gI().returnTownFromDead();
+                    Thread.Sleep(3000);
+                    continue;
+                }
+
+                // 1. If completed (100%), return to Karin to turn in
+                if (IsBoMongTaskDone())
+                {
+                    PickMob.tanSat = false;
+                    GI().autoAttack = false;
+
+                    GameScr.info1.addInfo("Nhiệm vụ Bò Mộng hoàn thành (100%)! Đang quay về báo cáo...", 0);
+                    GoToBoMongAndInteract(isReport: true);
+                    Thread.Sleep(1500);
+
+                    if (IsBoMongTaskDone())
+                    {
+                        ResetBoMongTask();
+                    }
+                    Thread.Sleep(1000);
+                    continue;
+                }
+
+                // 2. If no task accepted, go to Karin and interact to accept
+                if (!HasBoMongTask())
+                {
+                    GoToBoMongAndInteract(isReport: false);
+                    Thread.Sleep(2000);
+                    continue;
+                }
+
+                // 3. Resolve target map
+                int targetMapId = boMongTargetMapId;
+                if (targetMapId < 0)
+                {
+                    targetMapId = FindMapForMob(boMongMobName);
+                }
+                if (targetMapId < 0)
+                {
+                    TaskOrder t = GetCurrentBoMongTask();
+                    if (t != null) targetMapId = GetTaskMapId(t);
+                }
+
+                if (targetMapId < 0)
+                {
+                    GameScr.info1.addInfo("Không xác định được map cho quái: " + boMongMobName, 0);
+                    Thread.Sleep(5000);
+                    continue;
+                }
+
+                // 4. Travel to target map via Xmap
+                if (TileMap.mapID != targetMapId)
+                {
+                    PickMob.tanSat = false;
+                    GI().autoAttack = false;
+
+                    GameScr.info1.addInfo("Đang đến " + GetMapNameById(targetMapId) + " (" + targetMapId + ") tiêu diệt " + boMongMobName + "...", 0);
+                    XmapController.StartRunToMapId(targetMapId);
+                    while (TileMap.mapID != targetMapId && isAutoBoMong)
+                    {
+                        if (Char.myCharz().cHP <= 0 || Char.myCharz().statusMe == 14)
+                        {
+                            Service.gI().returnTownFromDead();
+                            Thread.Sleep(3000);
+                            XmapController.StartRunToMapId(targetMapId);
+                        }
+                        Thread.Sleep(500);
+                    }
+                    if (!isAutoBoMong) break;
+                    Thread.Sleep(1000);
+                }
+
+                // 5. Hunt the mob at target map
+                if (TileMap.mapID == targetMapId)
+                {
+                    int targetMobTmplId = GetMobTemplateIdByName(boMongMobName);
+                    if (targetMobTmplId < 0)
+                    {
+                        for (int i = 0; i < GameScr.vMob.size(); i++)
+                        {
+                            Mob m = (Mob)GameScr.vMob.elementAt(i);
+                            if (m != null && m.getTemplate() != null)
+                            {
+                                if (m.getTemplate().name.ToLower().Contains(boMongMobName.ToLower()) ||
+                                    boMongMobName.ToLower().Contains(m.getTemplate().name.ToLower()))
+                                {
+                                    targetMobTmplId = m.templateId;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (targetMobTmplId >= 0)
+                    {
+                        if (!PickMob.TypeMobsTanSat.Contains(targetMobTmplId))
+                        {
+                            PickMob.TypeMobsTanSat.Clear();
+                            PickMob.TypeMobsTanSat.Add(targetMobTmplId);
+                        }
+                    }
+                    else
+                    {
+                        PickMob.TypeMobsTanSat.Clear();
+                    }
+
+                    PickMob.tanSat = true;
+                    GI().autoAttack = true;
+
+                    int lastCount = boMongCount;
+                    int lastPct = boMongPercent;
+
+                    while (isAutoBoMong && TileMap.mapID == targetMapId)
+                    {
+                        if (Char.myCharz().cHP > 0 && Char.myCharz().cHP < Char.myCharz().cHPFull * 30 / 100)
+                        {
+                            GameScr.gI().doUseHP();
+                        }
+
+                        if (Char.myCharz().cHP <= 0 || Char.myCharz().statusMe == 14)
+                        {
+                            Service.gI().returnTownFromDead();
+                            Thread.Sleep(3000);
+                            break;
+                        }
+
+                        if (IsBoMongTaskDone())
+                        {
+                            break;
+                        }
+
+                        TaskOrder t = GetCurrentBoMongTask();
+                        if (t != null)
+                        {
+                            boMongCount = t.count;
+                            boMongMaxCount = t.maxCount;
+                            if (t.count >= t.maxCount)
+                            {
+                                boMongIsDone = true;
+                                break;
+                            }
+                        }
+
+                        if (boMongCount != lastCount || boMongPercent != lastPct)
+                        {
+                            lastCount = boMongCount;
+                            lastPct = boMongPercent;
+                            GameScr.info1.addInfo("Bò Mộng: " + boMongMobName + " (" + boMongCount + "/" + boMongMaxCount + " - " + boMongPercent + "%)", 0);
+                        }
+
+                        Thread.Sleep(800);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                Thread.Sleep(1000);
+            }
+        }
+
+        PickMob.tanSat = false;
+        GI().autoAttack = false;
+    }
+    #endregion
 }

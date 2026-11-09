@@ -3553,6 +3553,7 @@ public class Controller : IMessageHandler
                                 }
                                 GameScr.gI().createMenu(menu, npc);
                                 ChatPopup.addChatPopup(chat, 100000, npc);
+                                ModFunc.HandleNpcMenu(npcId, menu, chat);
 
                                 if (npcId == 21 && chat.Contains("tối đa"))
                                 {
@@ -3579,6 +3580,7 @@ public class Controller : IMessageHandler
                         }
                         GameScr.gI().createMenu(menu1, npc1);
                         ChatPopup.addChatPopup(chat1, 100000, npc1);
+                        ModFunc.HandleNpcMenu(npcId, menu1, chat1);
                         break;
                     }
                 case 7:
