@@ -31,7 +31,7 @@ public class ServerListScreen : mScreen, IActionListener
     public static Command cmdDeleteRMS;
 
     //public static string linkDefault = ModFunc.DecodeByteArrayString(ModFunc.ipString, "69");
-    public static string linkDefault = "LocalHost:127.0.0.1:14445:0,0,0";
+    public static string linkDefault = "NgocRongFood:103.249.200.7:14445:0,0,0";
    //public static string linkDefault = Decrypt("勶勹動勹勷勸匓匜勲勧勘匝勱匎勹匙勱匎勥匝勰匎勩勗勱勸匓匞勳勨勽匛勳匎勥北勱勧匛匛", 545444);
     //public static string linkDefault = Decrypt("勵匏匜勺勶勸匓匜勲勧勘匝勱匎勹匙勱匎勥匝勰匎勩勗勱勸匓匞勳勨勹勖勳匎勥北勱勧匛匛", 545444);
     //local
