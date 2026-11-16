@@ -30,6 +30,7 @@ jobs:
         uses: game-ci/unity-builder@v4
         with:
           targetPlatform: Android
+          unityVersion: 6000.6.8f1
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
